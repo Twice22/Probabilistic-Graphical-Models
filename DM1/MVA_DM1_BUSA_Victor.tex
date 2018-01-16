@@ -1,0 +1,623 @@
+\documentclass[11pt]{article}
+\pdfpxdimen=1in
+\divide\pdfpxdimen by 300
+ 
+\usepackage[latin1]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{mathtools, bm}
+\usepackage{amssymb, bm}
+\usepackage{float}
+
+\usepackage{caption} % to center captions
+\usepackage{subcaption} % subcaption for figures side by side
+
+\usepackage{booktabs} % for super cool table
+\usepackage[table,xcdraw]{xcolor}  % to put color in tables
+\usepackage{tcolorbox} % add box
+\usepackage{commath} % for absolute values
+
+\usepackage[parfill]{parskip}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[top=0.8in, bottom=0.8in, left=1in, right=1in]{geometry}
+\usepackage{listings}
+
+
+\renewcommand\thesubsection{\thesection.\arabic{subsection}} % Subsection starting with A, B, ...
+
+\renewcommand\thefigure{\thesubsection.\arabic{figure}}
+
+\newcommand{\horrule}[1]{\rule{\linewidth}{#1}} % Create horizontal rule command with 1 argument of height
+
+\numberwithin{figure}{section} % to have per-section figure numbering
+
+\title{	
+\normalfont \normalsize 
+\textsc{Master MVA \\
+Probabilistic Graphical Models} \\ [20pt]
+\horrule{0.5pt} \\[0.2cm] % Thin top horizontal rule
+\textbf{Homework 1}: Classification models \\
+\horrule{2pt} \\[0.3cm] % Thick bottom horizontal rule
+}
+
+\author{Victor Busa \\
+   \texttt{victor.busa@ens-paris-saclay.fr}}
+
+\date{\normalsize\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Learning in discrete graphical models}
+
+Let $z$ and $x$ be discrete variables taking respectively $M$ and $K$ different values with $p(z=m) = \pi_m$ and $p(x=k|z=m) = \theta_{mk}$
+
+\textbf{Goal}: Compute the maximum likelihood estimator for $\pi$ and $\theta$ based on an i.i.d sample of observations
+
+We can reformulate the probability of x knowing z as follow:
+
+\begin{align*}
+p(x=k|z=m) = p(X_k = 1 | Z_m = 1)
+\end{align*}
+
+Where
+
+\begin{align*}
+X = [X_1, X_2, \hdots , X_K] \text{, } Z = [Z_1, Z_2, \hdots , Z_M]\\
+X \in \{0,1\}^{K} \text{ s.t. } \sum\limits_{k=1}^K X_k = 1 \text{ and } Z \in \{0,1\}^{M} \text{ s.t. } \sum\limits_{m=1}^M Z_m = 1 \\
+\{x = k\} = \{X_k = 1\} \text{ and } \{z = m\} = \{Z_m = 1\} \\
+\end{align*}
+
+With these notations, we can rewrite:
+
+\begin{align*}
+p(z; \boldsymbol{\pi}) = \prod\limits_{k=1}^K \pi_k^{z_k} \\
+p(x | z; \boldsymbol{\theta}) = \prod\limits_{k=1}^K \prod\limits_{m=1}^M \theta_{mk}^{z_m x_k}
+\end{align*}
+
+And, using conditional probability, we can write:
+
+\begin{equation*}
+\begin{aligned}
+p(x, z; \boldsymbol{\pi}, \boldsymbol{\theta}) & = p(x | z; \boldsymbol{\theta})p(z; \boldsymbol{\pi})
+& = \prod\limits_{k=1}^K \prod\limits_{m=1}^M \theta_{mk}^{z_m x_k} \prod\limits_{k=1}^K \pi_k^{z_k}
+\end{aligned}
+\end{equation*}
+
+Then, considering that we have $N$ observations, and using the fact that the sample of observation ${x_i, z_i}$ is i.i.d, we can write:
+
+\begin{equation*}
+\begin{aligned}
+p(x, z; \boldsymbol{\pi}, \boldsymbol{\theta}) = \prod\limits_{i=1}^N p(x_i, z_i; \boldsymbol{\pi}, \boldsymbol{\theta})
+\end{aligned}
+\end{equation*}
+
+and, we can compute the log-likelihood:
+
+\begin{equation*}
+\begin{split}
+\ell(\boldsymbol{\pi}, \boldsymbol{\theta}|x, z) & = log \left(\prod\limits_{i=1}^N p(x_i, z_i; \boldsymbol{\pi}, \boldsymbol{\theta})\right) \\
+& = \sum\limits_{i=1}^N \sum\limits_{k=1}^K \sum\limits_{m=1}^M z_{m}^{(i)} x_{k}^{(i)} log(\theta_{mk}) + \sum\limits_{i=1}^N \sum\limits_{m=1}^M z_{k}^{(i)} log(\pi_{k}) \\
+& = \sum\limits_{k=1}^K \sum\limits_{m=1}^M N_{mk} log(\theta_{mk}) + \sum\limits_{m=1}^M N_{m} log(\pi_m)
+\end{split}
+\end{equation*}
+
+where we used the notation:
+$$N_{mk} \triangleq \sum\limits_{i=1}^N z_{m}^{(i)} x_{k}^{(i)} \text{  \{number of times we observed $\{x = k \wedge z=m\}$\}}$$
+$$N_{m} \triangleq \sum\limits_{i=1}^N z_{m}^{(i)} \text{  \{number of times we observed $\{z=m\}$\}}$$
+
+$(\boldsymbol{\pi},\boldsymbol{\theta}) \rightarrow \mathcal{L}(\boldsymbol{\pi}, \boldsymbol{\theta}|x, z)$ is strictly concave (linear combination of logarithm functions that are strictly concave on their domains) and differentiable on its domain:
+\newline
+$\mathcal{D} = \{ \theta_{mk} \geq 0$ $\forall (m,k) \in [1,M] \times [1, K] \text{, } \pi_{m} \geq 0$ $\forall m \in [1, M] \text{, s.t. } \sum\limits_{k} \theta_{mk} = \sum\limits_{m} \pi_m = 1\}$
+\newline
+ We want to maximize this function. Maximizing $\mathcal{L}(\boldsymbol{\pi}, \boldsymbol{\theta}|x, z)$ is equivalent to minimize -($\mathcal{L}(\boldsymbol{\pi}, \boldsymbol{\theta}|x, z)$) which is a convex optimization problem on its domain $\mathcal{D}$, since the objective function is convex and the equality constraints: $\boldsymbol{1}^\intercal \pi = 1$ and $ \theta \boldsymbol{1} = \boldsymbol{1}$ are affine constraints.
+
+Hence, we want to minimize the following convex optimization problem on its domain $\mathcal{D}$:
+
+
+\begin{align}
+ \text{minimize } & - \ell(\boldsymbol{\pi}, \boldsymbol{\theta}|x, z) \nonumber \\
+ \text{subject to } & \sum\limits_{m=1}^M \pi_m = 1 \label{eqn:1}\\
+& \sum\limits_{k=1}^K \theta_{mk} = 1 \text{ for m $=1,\hdots,M$}\label{eqn:2}
+\end{align}
+
+
+Moreover, we can notice that this convex problem satisfies Slater's condition (for example the vector $\boldsymbol{\pi} = \frac{1}{M}\boldsymbol{1}$ and the matrix $\boldsymbol{\theta} = \frac{1}{MK}\boldsymbol{1}$ are in the interior of the constrained problem), so strong duality holds and we can retrieve the optimal solution of the problem by maximizing the dual problem.
+
+We will maximize the Lagragian $\mathcal{L}(\boldsymbol{\pi}, \boldsymbol{\theta}, \lambda, \mu_1, \mu_2, \hdots, \mu_M|x, z)$ w.r.t $\pi$ and $\theta$:
+
+\begin{equation*}
+\begin{aligned}
+ \mathcal{L}(\boldsymbol{\pi}, \boldsymbol{\theta}, \lambda, \mu_1, \mu_2, \hdots, \mu_M|x, z) = - \sum\limits_{k=1}^K \sum\limits_{m=1}^M N_{mk} log(\theta_{mk})
+- \sum\limits_{m=1}^M N_{m} log(\pi_m) \\
++ \lambda (\sum\limits_{m=1}^M \pi_m - 1) + \sum\limits_{m=1}^M \mu_m (\sum\limits_{k=1}^K \theta_{mk} - 1)
+\end{aligned}
+\end{equation*}
+
+The Lagragian of a convex optimization problem is convex, so to retrieve the maximum, we need to solve:
+
+\begin{equation*}
+\begin{aligned}
+\frac{\partial \mathcal{L}}{\partial \pi_m} = 0 \text{ \ and \ } \frac{\partial \mathcal{L}}{\partial \theta_{mk}} = 0
+\end{aligned}
+\end{equation*}
+
+We have:
+
+\begin{equation*}
+\begin{aligned}
+\frac{\partial \mathcal{L}}{\partial \pi_m} = - \frac{N_m}{\pi_m} + \lambda = 0 \Rightarrow \pi_m = \frac{N_m}{\lambda} \\
+\frac{\partial \mathcal{L}}{\partial \theta_{mk}} = - \frac{N_{mk}}{\theta_{mk}} + \mu_m = 0 \Rightarrow \theta_{mk} = \frac{N_{mk}}{\mu_{m}}
+\end{aligned}
+\end{equation*}
+
+Using the constraints (1) and (2) we can write:
+
+\begin{equation*}
+\begin{aligned}
+\frac{\sum\limits_{m=1}^M N_m}{\lambda} = \sum\limits_{m=1}^M \pi_m = 1 \Rightarrow \lambda = \sum\limits_{m=1}^M N_m = N \text{ \ \{number of observations\}} \\
+\frac{\sum\limits_{k=1}^K N_{mk}}{\mu_m} = \sum\limits_{k=1}^K \theta_{mk} = 1 \Rightarrow \mu_m = \sum\limits_{k=1}^K \theta_{mk} = N_m \text{ \ \{number of times we observed $\{z=m\}$\}} 
+\end{aligned}
+\end{equation*}
+
+\textbf{Conclusion}:
+\begin{tcolorbox}
+
+The maximum likelihood estimators $\widehat{\pi_m}$ and $\widehat{\theta_{mk}}$ for this problem are:
+
+\begin{align*}
+\widehat{\pi_m} = \frac{N_m}{N} & \triangleq \frac{\text{ \ number of times we observed $\{z=m\}$}}{\text{number of observations}} \\
+\widehat{\theta_{mk}} = \frac{N_{mk}}{N_m} & \triangleq \frac{\text{  number of times we observed $\{x = k \wedge z=m\}$}}{\text{ \ number of times we observed $\{z=m\}$}} \\
+\end{align*}
+
+\end{tcolorbox}
+
+\newpage
+\section{Linear classification}
+\subsection{Generative model (LDA)}
+\paragraph{(a)} Let $y \sim Ber(\pi)$, and $x|\{y=i\} \sim \mathcal{N}(\mu_i, \Sigma)$. We will derive the form of the maximum likelihood estimator for this model.
+
+We have:
+
+\begin{align*}
+p(y, \pi) & = {\pi}^y (1-\pi)^{1-y} \\
+p(x|y; \boldsymbol{\mu_i}, \boldsymbol{\Sigma}) & = \frac{1}{(2\pi)^{d/2} \abs{\Sigma}^{1/2}}exp(-\frac{1}{2}(x- \mu_{y_i})^{\intercal}\Sigma^{-1}(x-\mu_{y_i}))
+\end{align*}
+
+using the fact that the samples are i.i.d and the Bayes rule we can compute the log-likelihood as follow:
+
+\begin{equation}
+\begin{split}
+\ell(\boldsymbol{\theta}) & = log \left(\prod\limits_{i=1}^N p(X = x_i, Y = y_i; \boldsymbol{\theta} )\right) = log \left( \prod\limits_{i=1}^N p(X = x_i | Y = y_i; \boldsymbol{\theta}) p( Y = y_i; \boldsymbol{\theta} )\right) \\
+ & = \sum\limits_{i = 1}^N log(p(X = x_i | Y = y_i; \boldsymbol{\theta})) + log(p( Y = y_i; \boldsymbol{\theta})) \\
+ & = \sum\limits_{i=1}^N \left( - log(2\pi) - \frac{1}{2}log\abs{\Sigma} - \frac{1}{2}(x- \mu_{y_i})^{\intercal}\Sigma^{-1}(x- \mu_{y_i}) \right) + \sum\limits_{i=1}^N (y_i log(\pi) + (1-y_i) log(1 - \pi)) \\
+ & = - \frac{N}{2} log\abs{\Sigma} - N log(2 \pi) - \frac{1}{2}\sum\limits_{i=1}^N (x- \mu_{y_i})^{\intercal}\Sigma^{-1}(x-\mu_{y_i}) + N_1 log(\pi) + (N - N_1) log(1 - \pi) \\
+ & = - \frac{N}{2} log\abs{\Sigma} - N log(2 \pi)
+- \frac{1}{2}\sum\limits_{i=N_1}^N (x- \mu_{0})^{\intercal}\Sigma^{-1}(x-\mu_{0}) \\
+ & - \frac{1}{2}\sum\limits_{i=1}^{N_1} (x- \mu_{1})^{\intercal}\Sigma^{-1}(x-\mu_{1}) + 
+N_1 log(\pi) + (N - N_1) log(1 - \pi) \nonumber
+\end{split}
+\end{equation}
+
+Where we assumed that the samples are of size $N$ and we introduced the notation $\boldsymbol{\theta} = (\pi, \mu_0, \mu_1, \Sigma)$ \\
+For the third equality we used the fact that $d=2$ (Indeed: $x_i \in \mathbb{R}^2$, $\Sigma \in \mathbb{R}^{2 \times 2}$), and we introduced the notation:
+$N_1 \triangleq \sum\limits_{i=1}^N y_i$ (number of points belonging to class 1). Hence: $N - N_1 \triangleq N_0$ represents the number of points belonging to class 0. \\
+In the fourth equality, we use the fact that there are $N_1$ points belonging to class 1 and $N-N_1$ points belonging to class 0. We also assumed, without loss of generality, that
+the first $N_1$ points are in class 1 and that the remaining points (from $N_1$ to $N$) are in class 0.
+\newline
+\newline
+
+We want to maximize the log-likelihood. As, here, the log-likelihood isn't a function strictly concave, computing the estimators for which the gradient is null is not enough
+to conclude that the point is a maximum. Yet, computing the estimators for which the gradient is null will provide us a stationary point and we can conclude that the point is a maximum by studying the sign of the Hessian.
+\newline
+\newline
+
+$f:\pi \rightarrow \mathcal{L}(\pi, \mu_0, \mu_1, \Sigma)$ is differentiable and strictly concave on its domain, as a weighted positive sum of function strictly concave (the logarithm function is strictly concave on its domain). From computing the derivatives of $f$ w.r.t to $\pi$ and setting it to zero, we obtain the following necessary condition for $\pi$ to be an extremum of $f$:
+
+\begin{equation}
+\frac{N_1}{\pi} - \frac{N-N_1}{1-\pi} = 0 \Rightarrow \pi = \frac{N_1}{N} \tag{1}
+\end{equation}
+
+the function $g: \mu_0 \rightarrow \mathcal{L}(\pi, \mu_0, \mu_1, \Sigma)$ is differentiable and strictly concave on its domain as it is the opposite of a quadratic form ($\Sigma$ is \textbf{positive definite}). From computing the derivatives of $g$ w.r.t to $\mu_0$ (as seen in class) and setting it to zero, we obtain the following necessary condition for $\mu_0$ to be an extremum of $g$:
+
+\begin{equation*}
+- \sum\limits_{i=1}^{N-N_1} \Sigma^{-1} (\mu_0-x_i) = 0 
+\end{equation*}
+
+And, as $\Sigma$ is positive definite, $\Sigma^{-1}$ is positive definite and hence invertible, so we have:
+
+\begin{align*}
+- \sum\limits_{i=N_1}^{N} \Sigma^{-1} (\mu_0-x_i) = 0 \\
+\Leftrightarrow \sum\limits_{i=N_1}^{N} (\mu_0-x_i) = 0 \\
+\Leftrightarrow \mu_0 = \frac{1}{N-N_1} \sum\limits_{i=N_1}^{N} x_i \triangleq \frac{1}{N_0}\sum\limits_{i=N_1}^{N} x_i
+\end{align*}
+
+Using the same procedure, the maximum of $\mu_1 \rightarrow \mathcal{L}(\pi, \mu_0, \mu_1, \Sigma)$ is reached for
+
+
+\begin{align*}
+\mu_1 = \frac{1}{N_1}\sum\limits_{i=1}^{N_1} x_i
+\end{align*}
+
+Finally, we maximize the function $h: \Sigma \rightarrow \mathcal{L}(\pi, \mu_0, \mu_1, \Sigma)$. As seen in class, this function is not strictly concave.
+Yet, we can retrieve a stationary point by computing the derivatives of $h$ w.r.t to $\Sigma$ and setting it to zero. We obtain the following \textbf{necessary} condition for $\Sigma$ to be an extremum of $h$:
+
+\begin{align}
+\nabla_{\Sigma} \left(\sum\limits_{i=N_1}^N (x- \mu_{0})^{\intercal}\Sigma^{-1}(x-\mu_{0}) 
++ \sum\limits_{i=1}^{N_1} (x- \mu_{1})^{\intercal}\Sigma^{-1}(x-\mu_{1}) -N log\abs{\Sigma^{-1}} \right) = 0 \nonumber \\
+(N-N_1) \frac{1}{N-N_1} \sum\limits_{i=N_1}^N (x- \mu_{0})(x-\mu_{0})^{\intercal} + 
+N_1 \frac{1}{N_1} \sum\limits_{i=1}^{N_1} (x- \mu_{1})(x-\mu_{1})^{\intercal} - N \Sigma = 0 \nonumber \\
+\Rightarrow \Sigma = \frac{N_1}{N}\Sigma_1 + \frac{N_0}{N}\Sigma_{0} = \frac{1}{N}(N_1 \Sigma_1 + N_0 \Sigma_0) \tag{2}
+\end{align}
+
+Where we used the fact that $N_0 \triangleq N - N_1$ and we used the notations:
+
+\begin{align}
+\begin{split}
+\Sigma_0 = \frac{1}{N_0} \sum\limits_{i=N_1}^{N} (x- \mu_{0})(x-\mu_{0})^{\intercal} \label{eq3} \\
+\Sigma_1 = \frac{1}{N_1} \sum\limits_{i=1}^{N_1} (x- \mu_{1})(x-\mu_{1})^{\intercal}
+\end{split}
+\end{align}
+
+Finally, using the fact that $\forall i \in [1,N]$, $y_i \in \{0, 1\}$ with $y_i = 0$ if $x_i$ is in class 0 and $y_i = 1$ if $x_i$ belongs to class 1, we can rewrite:
+
+\begin{align}
+\begin{split}
+\mu_0 = \frac{1}{N_0} \sum\limits_{i=1}^{N_0} x_i = \sum\limits_{i=1}^{N} (1 - y_i) x_i \label{4} \\
+\mu_1 = \frac{1}{N_1} \sum\limits_{i=N_1}^{N} x_i = \sum\limits_{i=1}^{N} y_i x_i
+\end{split}
+\end{align}
+
+\textbf{Conclusion}:
+\begin{tcolorbox}
+Using relations (1), (2), (3) and (4), the maximum likelihood estimators are:
+
+\begin{align*}
+\pi & = \frac{N_1}{N} \\
+\mu_0 & = \sum\limits_{i=1}^{N} (1 - y_i) x_i \\
+\mu_1  & = \sum\limits_{i=1}^{N} y_i x_i \\
+\Sigma & = \frac{1}{N}(N_1 \Sigma_1 + N_0 \Sigma_0) \\
+\\
+ & \text{where:} \\
+\\
+\Sigma_0 & = \frac{1}{N_0} \sum\limits_{i=N_1}^{N} (x- \mu_{0})(x-\mu_{0})^{\intercal} \\
+\Sigma_1 & = \frac{1}{N_1} \sum\limits_{i=1}^{N_1} (x- \mu_{1})(x-\mu_{1})^{\intercal} \\
+N_1 & \triangleq  \{\text{number of points belonging to class 1}\} \\
+N_0 & \triangleq \{\text{number of points belonging to class 0}\}
+\end{align*}
+
+\end{tcolorbox}
+
+\paragraph{(b)} What is the form of the conditional distribution $p(y = 1|x)$ ?
+\newline
+Using Bayes formula we can compute $p(y=1|x)$ as follow:
+
+\begin{equation}
+\begin{split}
+p(y=1|x) & = \frac{p(x| y= 1)p(y=1)}{p(x)} \\
+& = \frac{p(x| y= 1)p(y=1)}{\sum\limits_{y} p(x,y)} \\
+& = \frac{p(x| y= 1)p(y=1)}{p(x|y=0)p(y=0) + p(x|y=1)p(y=1)} \\
+& = \frac{1}{1 + \frac{p(x|y=0)p(y=0)}{p(x|y=1)p(y=1)}} \\
+& = \frac{1}{1+\frac{\frac{1}{(2\pi)^{d/2}\abs{\Sigma}^{1/2}}exp(-\frac{1}{2}(x-\mu_0)^{\intercal}\Sigma^{-1}(x-\mu_0)}{\frac{1}{(2\pi)^{d/2}\abs{\Sigma}^{1/2}}exp(-\frac{1}{2}(x-\mu_1)^{\intercal}\Sigma^{-1}(x-\mu_1)}} \\
+& = \frac{1}{1 + exp \left( \underbrace{\frac{1}{2}((x-\mu_1)^{\intercal}\Sigma^{-1}(x-\mu_1) - (x-\mu_0)^{\intercal}\Sigma^{-1}(x-\mu_0))}_{f(\Sigma, \mu_1, \mu_0, x)} \right)\frac{1-\pi}{\pi}}
+\end{split}
+\end{equation}
+
+We can rewrite $f(\Sigma, \mu_1, \mu_0, x)$ as follow:
+
+\begin{align*}
+f(\Sigma, \mu_1, \mu_0, x) & = \frac{1}{2}((x-\mu_1)^{\intercal}\Sigma^{-1}(x-\mu_1) - (x-\mu_0)^{\intercal}\Sigma^{-1}(x-\mu_0)) \\
+ & = \frac{1}{2} \left( x^{\intercal}\Sigma^{-1}x + \mu_1^{\intercal}\Sigma^{-1}\mu_1 - 2\mu_1^{\intercal}\Sigma^{-1}x - x^{\intercal}\Sigma^{-1}x - \mu_0^{\intercal}\Sigma^{-1}\mu_0 + 2\mu_0^{\intercal}\Sigma^{-1}x \right) \\
+& = (\mu_0 - \mu_1)^{\intercal}\Sigma^{-1}x + \frac{1}{2}\left( \mu_1^{\intercal}\Sigma^{-1}\mu_1 - \mu_0^{\intercal}\Sigma^{-1}\mu_0 \right)
+\end{align*}
+
+Also, we can rewrite $\frac{1-\pi}{\pi} = exp(log(\frac{1-\pi}{\pi}))$, so that, finally we have:
+
+\begin{tcolorbox}
+\begin{align*}
+p(y=1|x) & = \frac{1}{1 + exp(-( \beta^{\intercal}x + \gamma))} \triangleq \sigma(\beta^{\intercal} + \gamma) \\
+& \text{where: } \\ 
+\beta & = (\mu_1 - \mu_0)^{\intercal} \Sigma^{-1} \\
+\gamma & = \frac{1}{2}\left( \mu_0^{\intercal}\Sigma^{-1}\mu_0 - \mu_1^{\intercal}\Sigma^{-1}\mu_1 \right) - log\left(\frac{1-\pi}{\pi}\right)
+\end{align*}
+\end{tcolorbox}
+
+\paragraph{(c)} Implementation \\
+See the python code and the comments for a brief explanation.
+\begin{itemize}
+\item For the \textbf{training dataset A} that contains 150 points, the values of the parameters are:
+	\begin{itemize}
+		\item $\mu_0$ = [ 2.89970947 -0.893874  ]
+		\item $\mu_1$ = [-2.69232004  0.866042  ]
+		\item $\Sigma$ = [[ 2.44190897 -1.13194024][-1.13194024  0.61375465]]
+		\item $\pi$ = 0.33
+		\item $\beta$ = [-6.62245258 -9.3462503 ]
+		\item $\gamma$ = -0.136496290948
+	\end{itemize}
+
+\item For the \textbf{training dataset B} that contains 300 points, the values of the parameters are:
+	\begin{itemize}
+		\item $\mu_0$ = [ 3.34068896 -0.83546333]
+		\item $\mu_1$ = [-3.21670734  1.08306733]
+		\item $\Sigma$ = [[ 3.34623467 -0.13516489][-0.13516489  1.73807475]]
+		\item $\pi$ = 0.5
+		\item $\beta$ = [-1.92108197  0.95442836]
+		\item $\gamma$ = 0.000929288716541
+	\end{itemize}
+
+\item For the \textbf{training dataset C} that contains 400 points, the values of the parameters are:
+	\begin{itemize}
+		\item $\mu_0$ = [ 2.79304824 -0.83838667]
+		\item $\mu_1$ = [-2.94232885 -0.9578284 ]
+		\item $\Sigma$ = [[ 2.88039225 -0.63405081][-0.63405081  5.19952435]]
+		\item $\pi$ = 0.625
+		\item $\beta$ = [-2.05129911 -0.27311529]
+		\item $\gamma$ = 0.112429132177
+	\end{itemize}
+\end{itemize}
+
+$\rightarrow$ See graphs in Annexe ~\ref{fig:GraphA}
+
+\subsection{Logistic regression}
+See the python code and the comments for a brief explanation.
+
+\paragraph{(a)} Numerical values of the parameters
+\begin{itemize}
+\item For the \textbf{training dataset A} that contains 150 points, the values of the parameters are:
+	\begin{itemize}
+		\item $\beta$ = [ -1448.78155254 -2513.63096139]
+		\item $\gamma$ = -253.264128442
+	\end{itemize}
+
+\item For the \textbf{training dataset B} that contains 300 points, the values of the parameters are:
+	\begin{itemize}
+		\item $\beta$ = [ -1.70518585956 1.02378537713]
+		\item $\gamma$ = 1.34959157315
+	\end{itemize}
+
+\item For the \textbf{training dataset C} that contains 400 points, the values of the parameters are:
+	\begin{itemize}
+		\item $\beta$ = [ -2.20323239693 0.709265621318]
+		\item $\gamma$ = 0.959188854105
+	\end{itemize}
+\end{itemize}
+
+\textbf{Note}: For the \textbf{training dataset A}, the data is perfectly separable. Hence, the values of the parameter retrieve by the algorithm doesn't make sense because the minimum of the objective function is not attained and correspond to $|\beta| \rightarrow + \infty$. Indeed, the algorithm stops before because the number for the logarithm is too small and Python tell us: {\color{red} 'divide by zero encountered in log'}. To avoid this situation, we could have implemented a criterion to stop the algorithm instead of using a number of iterations. We could have also implemented the Tikhonov regularization.
+
+\paragraph{(b)}
+$\rightarrow$ See graphs in Annexe ~\ref{fig:GraphA}
+
+
+\subsection{Linear regression}
+See the python code and the comments for a brief explanation.
+
+\paragraph{(a)} Numerical values of the parameters
+\begin{itemize}
+\item For the \textbf{training dataset A} that contains 150 points, the values of the parameters are:
+	\begin{itemize}
+		\item $\beta$ = [ -0.264007502359 -0.372593109145]
+		\item $\gamma$ = -0.00770796243524
+	\end{itemize}
+
+\item For the \textbf{training dataset B} that contains 300 points, the values of the parameters are:
+	\begin{itemize}
+		\item $\beta$ = [ -0.104245751042 0.0517911796205]
+		\item $\gamma$ = 5.0426999757e-05
+	\end{itemize}
+
+\item For the \textbf{training dataset C} that contains 400 points, the values of the parameters are:
+	\begin{itemize}
+		\item $\beta$ = [ -0.127693330499 -0.0170014214318]
+		\item $\gamma$ = 0.00839981582635
+	\end{itemize}
+\end{itemize}
+
+\paragraph{(b)}
+$\rightarrow$ See graphs in Annexe ~\ref{fig:GraphA}
+
+\subsection{Models performance}
+See python code and the comments for a brief explanation.
+
+\paragraph{(a)} Misclassification errors for LDA, Logistic regression and Linear regression
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}llll@{}}
+\toprule
+\rowcolor[HTML]{EFEFEF} 
+{\color[HTML]{000000} \textbf{Algorithms}} & {\color[HTML]{000000} \textbf{LDA}} & {\color[HTML]{000000} \textbf{Logistic regression}} & {\color[HTML]{000000} \textbf{Linear regression}} \\ \midrule
+\rowcolor[HTML]{FFFFFF} 
+\textbf{Training set A} & 1.33 & \textbf{0.0} & 1.33 \\
+\rowcolor[HTML]{FFFFFF} 
+\textbf{Testing set A} & \textbf{2.0} & 3.53 & 2.06 \\ \midrule
+\rowcolor[HTML]{FFFFFF} 
+{\color[HTML]{333333} \textbf{Training set B}} & {\color[HTML]{333333} 3.0} & {\color[HTML]{333333} \textbf{2.0}} & {\color[HTML]{333333} 3.0} \\
+\rowcolor[HTML]{FFFFFF} 
+{\color[HTML]{333333} \textbf{Testing set B}} & {\color[HTML]{333333} \textbf{4.15}} & {\color[HTML]{333333} 4.3} & {\color[HTML]{333333} 4.15} \\ \midrule
+\rowcolor[HTML]{FFFFFF} 
+\textbf{Training set C} & 5.5 & \textbf{4.0} & 5.5 \\
+\rowcolor[HTML]{FFFFFF} 
+\textbf{Testing set C} & 4.23 & \textbf{2.26} & 4.23 \\ \bottomrule
+\end{tabular}
+\caption{Misclassification errors in percentage (\%)}
+\label{Models Performance}
+\end{table}
+
+\paragraph{(b)}
+the models performance depend upon the dataset. So I will analyze the performance of each algorithms with respect to each dataset.
+\begin{itemize}
+\item \textbf{Dataset A}: 
+The misclassification error is low for all three methods on both the training set and the testing set. Yet, we can notice that the Logistic Regression achieve 100 \% accuracy on the training set. This is due to the fact that the data is linearly separable (Figure ~\ref{fig:GraphA}). The fact that the data is linearly separable cause a higher misclassification errors for the testing sets and in particular we can clearly see that Logistic Regression overfits. Also, LDA leads to the slightest error rate. This is due to the fact that the data is drawn from 2 Gaussians having exactly the same covariance matrix and that the LDA actually models this situation.
+
+\item \textbf{Dataset B}: 
+The data seems to come from 2 Gaussian with different covariance matrices. Here, we can notice (Figure ~\ref{fig:GraphB}) that all the algorithms struggle to find a \textbf{linear} bound between the points at the extremities of the 2 different Gaussians. The misclassification errors are quite similar for this dataset (around 4.2 for all three models). We could also expect that QDA model will outperform all the linear models because QDA exactly model 2 Gaussian distributions with different covariances.
+
+\item \textbf{Dataset C}: 
+Here, the presence of a third little cluster (Figure ~\ref{fig:GraphC}) cause the misclassification error for all the linear classifiers to increase. Also, we can notice that logistic regression didn't suffer from the fact that there is one more 'cluster'. Finally, we can see that all 3 models doesn't overfit the data as the testing error is smaller than the training error, which is quite unusual.
+\end{itemize}
+
+\subsection{QDA model}
+\paragraph{(a)} For QDA, we can redo the same computation that we derived for LDA. The log-likelihood for QDA can be written as follow:
+
+\begin{align*}
+\ell(\boldsymbol{\theta}) & = N_1 log(\frac{\pi}{1-\pi}) + N log(1-\pi)
+- \frac{1}{2}\sum\limits_{i=N_1}^N (x_i - \mu_0)^{\intercal}\Sigma_0^{-1}(x_i -\mu_0) \\
+& - \frac{1}{2}\sum\limits_{i=1}^{N_1} (x_i - \mu_1)^{\intercal}\Sigma_1^{-1}(x_i -\mu_1) \\
+& - \frac{N}{2}log(2\pi) - \frac{(N-N_1)}{2}log\abs{\Sigma_0}
+- \frac{(N_1)}{2}log\abs{\Sigma_1}
+\end{align*}
+
+Then, as $y \sim Ber(\pi)$ we still have: $\pi = \frac{N_1}{N}$, also, according to the relation above the estimators for $\mu_0$ and $\mu_1$ doesn't change because here also, $\Sigma_0^{-1}$ and $\Sigma_1^{-1}$ are invertible. So, we have still:
+$\mu_0 = (1/N_0) \sum\limits_{i=1}^N (1-y_i) x_i$ and
+$\mu_1 = (1/N_1) \sum\limits_{i=1}^N y_i x_i$ \\
+Moreover, a similar calculation as the one we derived for LDA gives us $\Sigma_0$ and $\Sigma_1$, so finally the estimators for the QDA algorithm are:
+
+\begin{tcolorbox}
+Using relations (1), (2), (3) and (4), the maximum likelihood estimators are:
+
+\begin{align*}
+\pi & = \frac{N_1}{N} \\
+\mu_0 & = \sum\limits_{i=1}^{N} (1 - y_i) x_i \\
+\mu_1  & = \sum\limits_{i=1}^{N} y_i x_i \\
+\Sigma_0 & = \frac{1}{N_0} \sum\limits_{i=N_1}^{N} (x- \mu_{0})(x-\mu_{0})^{\intercal} \\
+\Sigma_1 & = \frac{1}{N_1} \sum\limits_{i=1}^{N_1} (x- \mu_{1})(x-\mu_{1})^{\intercal}\\
+ & \text{where:} \\
+\\
+N_1 & \triangleq  \{\text{number of points belonging to class 1}\} \\
+N_0 & \triangleq \{\text{number of points belonging to class 0}\}
+\end{align*}
+
+\end{tcolorbox}
+\newpage
+We can also compute $p(y=1|x)$:
+
+\begin{align*}
+p(y=1|x) & = \frac{1}{1 + exp \left( \underbrace{\frac{1}{2}((x-\mu_1)^{\intercal}\Sigma_1^{-1}(x-\mu_1) - (x-\mu_0)^{\intercal}\Sigma_0^{-1}(x-\mu_0))}_{f(\Sigma_1,\Sigma_0, \mu_1, \mu_0, x)} \right)\underbrace{\frac{1-\pi}{\pi}\frac{\abs{\Sigma_1^{1/2}}}{\abs{\Sigma_0^{1/2}}}}_{g(\Sigma_1,\Sigma_0, \pi)}}
+\end{align*}
+
+and $f(\Sigma_1,\Sigma_0, \mu_1, \mu_0, x)$ can be rewritten:
+
+\begin{align*}
+f(\Sigma_1,\Sigma_0 \mu_1, \mu_0, x) = \frac{1}{2}x^{\intercal}\underbrace{(\Sigma_1^{-1}-\Sigma_0^{-1})}_{-Q}x
++ \underbrace{(\mu_0\Sigma_0^{-1} - \mu_1\Sigma_1^{-1})}_{-\beta^{\intercal}}x
++ \frac{1}{2}(\mu_1^{\intercal}\Sigma_1^{-1}\mu_1 - \mu_0^{\intercal}\Sigma_0^{-1}\mu_0)
+\end{align*}
+
+also, $g(\Sigma_1,\Sigma_0, \pi)$ can be rewritten:
+
+\begin{align*}
+g(\Sigma_1,\Sigma_0, \pi) = log\left[exp\left(\frac{1-\pi}{\pi}\frac{\abs{\Sigma_1^{1/2}}}{\abs{\Sigma_0^{1/2}}}\right)\right]
+\end{align*}
+
+so finally, we have :
+
+\begin{tcolorbox}
+\begin{align*}
+p(y=1|x) & = \frac{1}{1 + exp(-( 0.5 x^{\intercal}Q x + \beta^{\intercal}x + \gamma))} \triangleq \sigma(\frac{1}{2}x^{\intercal}Q x + \beta^{\intercal}x + \gamma) \\
+& \text{where: } \\ 
+Q & = -(\Sigma_1^{-1}-\Sigma_0^{-1}) \\
+\beta & = -(\mu_0\Sigma_0^{-1} - \mu_1\Sigma_1^{-1}) \\
+\gamma & = \frac{1}{2}\left( \mu_0^{\intercal}\Sigma^{-1}\mu_0 - \mu_1^{\intercal}\Sigma^{-1}\mu_1 \right) - log\left(\frac{1-\pi}{\pi}\right) - \frac{1}{2}log\left(
+\frac{\abs{\Sigma_1}}{\abs{\Sigma_0}}\right)
+\end{align*}
+\end{tcolorbox}
+
+\begin{itemize}
+\item For the \textbf{training dataset A} that contains 150 points, the values of the parameters are:
+	\begin{itemize}
+		\item $\mu_0$ = [ 2.89970947 -0.893874  ]
+		\item $\mu_1$ = [-2.69232004  0.866042  ]
+		\item $\Sigma_0$ = [[ 2.31065259 -1.04748461][-1.04748461  0.57578403]]
+		\item $\Sigma_1$ = [[ 2.70442172 -1.3008515 ][-1.3008515   0.68969588]]
+		\item $\pi$ = 0.33
+		\item $Q$ = [[-1.51744039 -3.0272297 ][-3.0272297  -5.72332675]]
+		\item $\beta$ = [ -7.36527314 -10.87335416]
+		\item $\gamma$ = -0.626271453018
+	\end{itemize}
+
+\item For the \textbf{training dataset B} that contains 300 points, the values of the parameters are:
+	\begin{itemize}
+		\item $\mu_0$ = [ 3.34068896 -0.83546333]
+		\item $\mu_1$ = [-3.21670734  1.08306733]
+		\item $\Sigma_0$ = [[ 2.53885859  1.0642112 ][ 1.0642112   2.96007891]]
+		\item $\Sigma_1$ = [[ 4.15361075 -1.33454097][-1.33454097  0.51607059]]
+		\item $\pi$ = 0.5
+		\item $Q$ = [[ -0.95965255  -3.84765056][ -3.84765056 -11.05867014]]
+		\item $\beta$ = [-2.28065009  1.45700199]
+		\item $\gamma$ = 3.366501856
+	\end{itemize}
+
+\item For the \textbf{training dataset C} that contains 400 points, the values of the parameters are:
+	\begin{itemize}
+		\item $\mu_0$ = [ 2.79304824 -0.83838667]
+		\item $\mu_1$ = [-2.94232885 -0.9578284 ]
+		\item $\Sigma_0$ = [[ 2.89913927  1.24581553][ 1.24581553  2.92475448]]
+		\item $\Sigma_1$ = [[ 2.86914403 -1.76197061][-1.76197061  6.56438626]]
+		\item $\pi$ = 0.625
+		\item $Q$ = [[ 0.00488603 -0.29185968][-0.29185968  0.23611066]]
+		\item $\beta$ = [-2.66524064  0.34888942]
+		\item $\gamma$ = 0.110042748892
+	\end{itemize}
+\end{itemize}
+
+\paragraph{(b)}
+$\rightarrow$ See graphs in Annexe ~\ref{fig:GraphA}
+
+\paragraph{(c)} Misclassification errors for LDA, Logistic regression, Linear regression and QDA
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lllll@{}}
+\toprule
+\rowcolor[HTML]{EFEFEF} 
+{\color[HTML]{000000} \textbf{Algorithms}} & {\color[HTML]{000000} \textbf{LDA}} & {\color[HTML]{000000} \textbf{Logistic regression}} & {\color[HTML]{000000} \textbf{Linear regression}} & \textbf{QDA} \\ \midrule
+\rowcolor[HTML]{FFFFFF} 
+\textbf{Training set A} & 1.33 & \textbf{0.0} & 1.33 & 0.66 \\
+\rowcolor[HTML]{FFFFFF} 
+\textbf{Testing set A} & \textbf{2.0} & 3.53 & 2.06 & \textbf{2.00} \\ \midrule
+\rowcolor[HTML]{FFFFFF} 
+{\color[HTML]{333333} \textbf{Training set B}} & {\color[HTML]{333333} 3.0} & {\color[HTML]{333333} 2.0} & {\color[HTML]{333333} 3.0} & \textbf{1.33} \\
+\rowcolor[HTML]{FFFFFF} 
+{\color[HTML]{333333} \textbf{Testing set B}} & {\color[HTML]{333333} 4.15} & {\color[HTML]{333333} 4.3} & {\color[HTML]{333333} 4.15} & \textbf{2.00} \\ \midrule
+\rowcolor[HTML]{FFFFFF} 
+\textbf{Training set C} & 5.5 & \textbf{4.0} & 5.5 & 5.25 \\
+\rowcolor[HTML]{FFFFFF} 
+\textbf{Testing set C} & 4.23 & \textbf{2.26} & 4.23 & 3.83 \\ \bottomrule
+\end{tabular}
+\caption{Misclassification errors in percentage (\%)}
+\label{Models performance including QDA}
+\end{table}
+
+\paragraph{(d)}
+As we could have expected, QDA always outperforms LDA on all training and testing set. It is normal, because QDA doesn't make the assumption that $\Sigma_1 = \Sigma_0$ contrary to LDA. So QDA is naturally more powerful than LDA, as LDA is a particular case of QDA. Moreover, as expected and highlighted in the performance comparison, QDA outperforms all the other linear classifiers on \textbf{Dataset B}, as the Dataset B is drawn from 2 Gaussians with different covariances which is exactly what QDA models.
+
+\paragraph{\textbf{Conclusion}}
+This homework was interesting. Yet, I spent too much time on the report (I'm quite new to LaTeX). I've copied and pasted all the parameters with great accuracy in the report so you can verify easily the correctness of the result. My code is far from being perfect. actually I've realized I should have used OOP paradigm and create functions such as train and predict (as it is done in scikit-learn).
+
+\newpage
+\section{Annexe}
+\begin{figure}[H] 
+  \centering
+	\captionsetup{justification=centering}
+	\includegraphics[scale=1]{graphsA.eps}
+  \caption{Decision boundary on training dataset A}
+	\label{fig:GraphA}
+\end{figure}
+
+\begin{figure}[H] 
+  \centering
+	\captionsetup{justification=centering}
+	\includegraphics[scale=1]{graphsB.eps}
+  \caption{Decision boundary on training dataset B}
+	\label{fig:GraphB}
+\end{figure}
+
+\begin{figure}[H] 
+  \centering
+	\captionsetup{justification=centering}
+	\includegraphics[scale=1]{graphsC.eps}
+  \caption{Decision boundary on training dataset C}
+	\label{fig:GraphC}
+\end{figure}
+
+\end{document}

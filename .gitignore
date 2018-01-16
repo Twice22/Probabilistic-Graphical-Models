@@ -1,0 +1,8 @@
+# ignore all logs
+Review
+*.log
+*.bbl
+*.blg
+*.out
+*.aux
+*.gz
